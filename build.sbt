@@ -4,9 +4,9 @@ import scala.xml.{Comment, Elem, Node => XmlNode, NodeSeq => XmlNodeSeq}
 name := "ann4s"
 
 val versions = new {
-  val spark = "2.3.0"
+  val spark = "2.4.5"
   val rocksdb = "5.11.3"
-  val scalatest = "2.2.6"
+  val scalatest = "3.1.1"
 }
 
 libraryDependencies ++= Seq(
@@ -20,7 +20,7 @@ organization := "com.github.mskimm"
 
 isSnapshot := version.value.endsWith("-SNAPSHOT")
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.8"
 
 sources in (Compile, doc) := Seq.empty
 
