@@ -2,7 +2,7 @@ package ann4s.spark
 
 import ann4s.Random
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession, SQLContext}
 import org.scalatest.{FlatSpec, Matchers}
 
 class AnnoySparkSpec extends FlatSpec with Matchers with LocalSparkContext {
@@ -17,7 +17,9 @@ class AnnoySparkSpec extends FlatSpec with Matchers with LocalSparkContext {
 
   "Spark DataFrame-API" should "work" in {
     val sqlContext = new SQLContext(sc)
-    import sqlContext.implicits._
+
+    val spark: SparkSession = sqlContext.sparkSession
+    import spark.implicits._
 
     val idCol = "id"
     val featuresCol = "features"
@@ -27,7 +29,7 @@ class AnnoySparkSpec extends FlatSpec with Matchers with LocalSparkContext {
     val rdd: RDD[(Int, Array[Float])] =
       sc.parallelize(features.zipWithIndex.map(_.swap))
 
-    val dataset: DataFrame = rdd.toDF(idCol, featuresCol)
+    val dataset: Dataset[_] = rdd.toDF(idCol, featuresCol).as[(Int, Array[Float])]
 
     val annoyModel: AnnoyModel = new Annoy()
       .setDimension(dimension)
@@ -57,7 +59,8 @@ class AnnoySparkSpec extends FlatSpec with Matchers with LocalSparkContext {
       .map { case Row(id: Int, neighbor: Int) =>
         (id, neighbor)
       }
-      .groupByKey()
+      .groupByKey(_._1)
+      .mapGroups{ case (id, nns) => (id, nns.map(x => x._2).toArray) }
       .collect()
       .foreach { case (id, nns) =>
         nns.toSeq.intersect(trueNns(id)).length should be >= 2

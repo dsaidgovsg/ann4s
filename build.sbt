@@ -2,14 +2,12 @@ name := "ann4s"
 
 version := "0.1.0-SNAPSHOT"
 
-scalaVersion := "2.11.8"
-
-crossScalaVersions := Seq("2.10.6")
+scalaVersion := "2.12.8"
 
 libraryDependencies ++= Seq(
-  "org.apache.spark" %% "spark-core" % "1.6.2" % "provided",
-  "org.apache.spark" %% "spark-mllib" % "1.6.2" % "provided",
-  "org.scalatest" %% "scalatest" % "2.2.6" % "test"
+  "org.apache.spark" %% "spark-core" % "2.4.5" % "provided",
+  "org.apache.spark" %% "spark-mllib" % "2.4.5" % "provided",
+  "org.scalatest" %% "scalatest" % "3.1.1" % "test"
 )
 
 organization := "com.github.mskimm"
