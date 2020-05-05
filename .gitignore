@@ -1,5 +1,8 @@
 .idea
 target
 annoy-index-*
+.annoy-index-*
+annoy-spark-result/
 test.ann
 *.elapsed.log
+src/test/py/
