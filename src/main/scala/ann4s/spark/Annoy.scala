@@ -8,9 +8,10 @@ import org.apache.spark.ml.util._
 import org.apache.spark.ml.{Estimator, Model}
 import org.apache.spark.sql.functions.{col, explode, udf}
 import org.apache.spark.sql.types.{FloatType, IntegerType, StructField, StructType}
-import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.json4s.DefaultFormats
 import org.json4s.JsonDSL._
+import scala.collection.JavaConverters._
 
 trait AnnoyModelParams extends Params {
 
@@ -99,7 +100,7 @@ class AnnoyModel (
     ))
   }
 
-  override def transform(dataset: DataFrame): DataFrame = {
+  override def transform(dataset: Dataset[_]): DataFrame = {
     // broadcast the file
     dataset.sqlContext.sparkContext.addFile(indexFile)
 
@@ -153,7 +154,7 @@ object AnnoyModel extends MLReadable[AnnoyModel] {
         .copyToLocalFile(false, new Path(path, indexFile), new Path(indexFile))
 
       val model = new AnnoyModel(metadata.uid, dimension, indexFile)
-      DefaultParamsReader.getAndSetParams(model, metadata)
+      metadata.getAndSetParams(model)
       model
     }
   }
@@ -206,7 +207,7 @@ class Annoy(override val uid: String) extends Estimator[AnnoyModel] with AnnoyPa
 
   def this() = this(Identifiable.randomUID("annoy"))
 
-  override def fit(dataset: DataFrame): AnnoyModel = {
+  override def fit(dataset: Dataset[_]): AnnoyModel = {
     val annoyOutputFile = s"annoy-index-$uid"
 
     val m = if ($(metric) == "angular") {
@@ -225,13 +226,16 @@ class Annoy(override val uid: String) extends Estimator[AnnoyModel] with AnnoyPa
 
     annoyIndex.verbose($(verbose))
 
+    val sparkSession: SparkSession = dataset.sparkSession
+    import sparkSession.implicits._
+
     val items = dataset
       .select($(idCol), $(featuresCol))
       .map { case Row(id: Int, features: Seq[_]) =>
         (id, features.asInstanceOf[Seq[Float]].toArray)
       }
 
-    items.toLocalIterator
+    items.toLocalIterator().asScala
       .foreach { case (id, features) =>
         annoyIndex.addItem(id, features)
       }
